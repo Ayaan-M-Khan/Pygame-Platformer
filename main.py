@@ -34,7 +34,8 @@ def spawn_projectile(player, direction):
 
 def draw_hud(surface, player, level, enemies):
 	font = pygame.font.Font(None, 26)
-	text = f"Health {player.health}   Section: {level.platforms[0].section.title()}   Boss: {max(0, next((enemy.health for enemy in enemies if enemy.kind == 'boss'), 0))}"
+	section = level.section_at(player.rect.centerx).title()
+	text = f"Health {player.health}   Section: {section}   Boss: {max(0, next((enemy.health for enemy in enemies if enemy.kind == 'boss'), 0))}"
 	surface.blit(font.render(text, True, (245, 239, 211)), (18, 16))
 
 
@@ -87,6 +88,8 @@ def run(max_frames=None):
 					player.invulnerability_timer = gv.PLAYER_INVULNERABILITY_TIME
 
 		for platform in level.platforms:
+			if platform.kind == "breakable" and platform.active and player.rect.bottom == platform.rect.top and player.rect.colliderect(platform.rect):
+				platform.start_breaking()
 			if platform.active and platform.kind == "hazard" and player.rect.colliderect(platform.rect) and player.invulnerability_timer <= 0:
 				player.health -= gv.HAZARD_DAMAGE
 				player.invulnerability_timer = gv.PLAYER_INVULNERABILITY_TIME

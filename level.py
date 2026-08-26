@@ -53,6 +53,10 @@ class BreakablePlatform(Platform):
             if self.break_timer <= 0:
                 self.active = False
 
+    def start_breaking(self):
+        if self.break_timer is None:
+            self.break_timer = gv.BREAKABLE_PLATFORM_DELAY
+
 
 class HazardPlatform(Platform):
     def __init__(self, x, y, width, section):
@@ -126,6 +130,8 @@ class Level:
         platforms.append(HazardPlatform(2710, 656, 150, "hazard section"))
         platforms.append(HazardPlatform(3020, 656, 110, "hazard section"))
         platforms.append(Platform(4430, 680, 500, gv.PLATFORM_HEIGHT, "boss_floor", "boss arena"))
+        platforms.append(Platform(4430, 500, gv.PLATFORM_HEIGHT, 180, "boss_floor", "boss arena"))
+        platforms.append(Platform(4930, 500, gv.PLATFORM_HEIGHT, 180, "boss_floor", "boss arena"))
         return platforms
 
     def update(self, dt):
@@ -134,6 +140,12 @@ class Level:
 
     def collision_rects(self):
         return [platform for platform in self.platforms if platform.active]
+
+    def section_at(self, x):
+        for platform in self.platforms:
+            if platform.rect.left <= x <= platform.rect.right and platform.section:
+                return platform.section
+        return "open route"
 
     def draw(self, surface, camera_x, camera_y):
         for platform in self.platforms:

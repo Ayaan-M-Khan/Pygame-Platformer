@@ -42,15 +42,16 @@ class Enemy:
             if self.shoot_timer <= 0 and abs(player_rect.centerx - self.rect.centerx) < 850:
                 direction = 1 if player_rect.centerx >= self.rect.centerx else -1
                 projectile = {"rect": pygame.Rect(self.rect.centerx, self.rect.centery, 12, 8), "velocity": direction * gv.ENEMY_PROJECTILE_SPEED, "damage": gv.ENEMY_PROJECTILE_DAMAGE, "owner": "enemy"}
-                self.shoot_timer = gv.SHOOTER_INTERVAL / (1.5 if self.phase > 1 else 1)
+                self.shoot_timer = gv.SHOOTER_INTERVAL / (1.5 if self.phase == 2 else (2 if self.phase == 3 else 1))
         self.velocity_y = min(self.velocity_y + gv.ENEMY_GRAVITY * dt, gv.ENEMY_MAX_FALL_SPEED)
         self.rect.y += round(self.velocity_y * dt)
         for platform in platforms:
             if self.rect.colliderect(platform.rect) and self.velocity_y >= 0:
                 self.rect.bottom = platform.rect.top
                 self.velocity_y = 0
-        if self.kind == "boss" and self.health < gv.ENEMY_HEALTH["boss"] / 2:
-            self.phase = 2
+        if self.kind == "boss":
+            health_ratio = self.health / gv.ENEMY_HEALTH["boss"]
+            self.phase = 1 if health_ratio > 0.66 else (2 if health_ratio > 0.33 else 3)
         return projectile
 
     def _past_platform_edge(self, platforms):
