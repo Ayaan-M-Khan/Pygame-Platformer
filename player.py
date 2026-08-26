@@ -32,6 +32,10 @@ class Player:
         self.projectile_damage = projectile_damage
         self.coyote_timer = 0.0
         self.jump_buffer_timer = 0.0
+        self.has_dash = False
+        self.extra_jumps = 0
+        self.jumps_remaining = 0
+        self.dash_cooldown = 0.0
 
     #Define properties for the x and y coordinates of the player, allowing for easy access and modification of the player's position
     @property
@@ -53,6 +57,7 @@ class Player:
     def update(self, keys, platforms, dt):
         """Advance movement and resolve collisions against platform rectangles."""
         dt = min(max(dt, 0.0), 0.05)
+        self.dash_cooldown = max(0.0, self.dash_cooldown - dt)
         was_on_ground = self.on_ground
         self.on_ground = False
 
@@ -78,10 +83,21 @@ class Player:
             else:
                 self.vel_x -= friction if self.vel_x > 0 else -friction
 
-        if self.jump_buffer_timer > 0 and (was_on_ground or self.coyote_timer > 0):
+        if self.jump_buffer_timer > 0 and (was_on_ground or self.coyote_timer > 0 or self.jumps_remaining > 0):
             self.vel_y = -self.jump_strength
             self.jump_buffer_timer = 0.0
             self.coyote_timer = 0.0
+            if not was_on_ground and self.jumps_remaining > 0:
+                self.jumps_remaining -= 1
+
+        if was_on_ground:
+            self.jumps_remaining = self.extra_jumps
+
+        if self.has_dash and keys[pygame.K_LSHIFT] and self.dash_cooldown <= 0:
+            direction = horizontal_input or 1
+            self.vel_x = direction * gv.DASH_SPEED
+            self.vel_y = 0.0
+            self.dash_cooldown = gv.DASH_COOLDOWN
 
         if not keys[pygame.K_SPACE] and self.vel_y < 0:
             self.vel_y += gv.PLAYER_GRAVITY * (1 - gv.JUMP_RELEASE_MULTIPLIER) * dt
@@ -95,28 +111,40 @@ class Player:
         previous_bottom = self.rect.bottom
         self.rect.x += round(distance)
         for platform in platforms:
-            if previous_bottom > platform.top and self.rect.colliderect(platform):
+            platform_rect = self._platform_rect(platform)
+            if previous_bottom > platform_rect.top and self.rect.colliderect(platform_rect):
                 if distance > 0:
-                    self.rect.right = platform.left
+                    self.rect.right = platform_rect.left
                 elif distance < 0:
-                    self.rect.left = platform.right
+                    self.rect.left = platform_rect.right
                 self.vel_x = 0.0
 
     def _move_vertically(self, platforms, distance):
+        previous_bottom = self.rect.bottom
         self.rect.y += round(distance)
         for platform in platforms:
-            if self.rect.colliderect(platform):
+            platform_rect = self._platform_rect(platform)
+            if getattr(platform, "can_pass_through", False) and distance < 0:
+                continue
+            if self.rect.colliderect(platform_rect):
                 if distance > 0:
-                    self.rect.bottom = platform.top
+                    self.rect.bottom = platform_rect.top
                     self.vel_y = 0.0
                     self.on_ground = True
                 elif distance < 0:
-                    self.rect.top = platform.bottom
+                    if previous_bottom <= platform_rect.top:
+                        continue
+                    self.rect.top = platform_rect.bottom
                     self.vel_y = 0.0
 
-    def draw(self, surface):
-        pygame.draw.rect(surface, gv.PLAYER_COLOR, self.rect, border_radius=8)
-        pygame.draw.rect(surface, gv.PLAYER_OUTLINE_COLOR, self.rect, width=2, border_radius=8)
+    @staticmethod
+    def _platform_rect(platform):
+        return platform.rect if hasattr(platform, "rect") else platform
+
+    def draw(self, surface, camera_x=0, camera_y=0):
+        draw_rect = self.rect.move(-round(camera_x), -round(camera_y))
+        pygame.draw.rect(surface, gv.PLAYER_COLOR, draw_rect, border_radius=8)
+        pygame.draw.rect(surface, gv.PLAYER_OUTLINE_COLOR, draw_rect, width=2, border_radius=8)
 
     def move(self, keys):
         """Compatibility wrapper for callers that still use the original API."""
