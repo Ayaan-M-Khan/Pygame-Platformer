@@ -1,6 +1,7 @@
 #Imort statements 
 import gamevalues as gv
 import pygame
+from weapon import Weapon, create_weapon
 
 #Create Player Class
 class Player:
@@ -38,6 +39,12 @@ class Player:
         self.dash_cooldown = 0.0
         self.shield_charges = 0
         self.invulnerability_timer = 0.0
+        self.facing = 1
+        self.weapons = [create_weapon("sword"), create_weapon("ranged")]
+        self.current_weapon = self.weapons[0]
+        self.attack_effect = None
+        self.item_message = "Iron Sword"
+        self.item_message_timer = 0.0
 
     #Define properties for the x and y coordinates of the player, allowing for easy access and modification of the player's position
     @property
@@ -61,6 +68,7 @@ class Player:
         dt = min(max(dt, 0.0), 0.05)
         self.dash_cooldown = max(0.0, self.dash_cooldown - dt)
         self.invulnerability_timer = max(0.0, self.invulnerability_timer - dt)
+        self.item_message_timer = max(0.0, self.item_message_timer - dt)
         was_on_ground = self.on_ground
         self.on_ground = False
 
@@ -75,6 +83,8 @@ class Player:
             self.jump_buffer_timer = max(0.0, self.jump_buffer_timer - dt)
 
         horizontal_input = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])
+        if horizontal_input:
+            self.facing = horizontal_input
         acceleration = gv.PLAYER_ACCELERATION if was_on_ground else gv.PLAYER_AIR_ACCELERATION
         if horizontal_input:
             self.vel_x += horizontal_input * acceleration * dt
@@ -109,6 +119,27 @@ class Player:
 
         self._move_horizontally(platforms, self.vel_x * dt)
         self._move_vertically(platforms, self.vel_y * dt)
+        if self.attack_effect and pygame.time.get_ticks() >= self.attack_effect["expires"]:
+            self.attack_effect = None
+
+    def add_weapon(self, weapon):
+        self.weapons = [existing for existing in self.weapons if existing.name != weapon.name]
+        self.weapons.append(weapon)
+
+    def equip_weapon(self, name):
+        for weapon in self.weapons:
+            if weapon.name == name:
+                self.current_weapon = weapon
+                self.item_message = weapon.name
+                self.item_message_timer = 2.5
+                return True
+        return False
+
+    def attack(self, now):
+        attack = self.current_weapon.attack(self, now)
+        if attack and attack["kind"] == "melee":
+            self.attack_effect = attack
+        return attack
 
     def _move_horizontally(self, platforms, distance):
         previous_bottom = self.rect.bottom

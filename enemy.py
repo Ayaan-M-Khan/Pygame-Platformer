@@ -14,11 +14,15 @@ class Enemy:
         self.rect = pygame.Rect(x, y, *size)
         self.spawn_x = float(x)
         self.health = gv.ENEMY_HEALTH[kind]
+        self.max_health = self.health
+        self.name = gv.ENEMY_NAME[kind]
+        self.is_boss = kind == "boss"
         self.direction = 1
         self.velocity_y = 0.0
         self.jump_timer = gv.JUMPER_INTERVAL
         self.shoot_timer = gv.SHOOTER_INTERVAL
         self.phase = 1
+        self.hit_by_attack = False
 
     @property
     def alive(self):
@@ -28,11 +32,12 @@ class Enemy:
         projectile = None
         if self.kind in ("walker", "heavy", "boss"):
             speed = gv.ENEMY_SPEED[self.kind]
-            self.rect.x += round(speed * self.direction * dt)
+            self._move_horizontally(platforms, speed * self.direction * dt)
             if self._past_platform_edge(platforms) or abs(self.rect.centerx - self.spawn_x) > gv.ENEMY_PATROL_DISTANCE[self.kind]:
                 self.direction *= -1
         if self.kind == "jumper":
-            self.rect.x += round((1 if player_rect.centerx > self.rect.centerx else -1) * gv.ENEMY_SPEED["jumper"] * dt)
+            self.direction = 1 if player_rect.centerx > self.rect.centerx else -1
+            self._move_horizontally(platforms, gv.ENEMY_SPEED["jumper"] * self.direction * dt)
             self.jump_timer -= dt
             if self.jump_timer <= 0 and self.rect.bottom >= self._floor_top(platforms):
                 self.velocity_y = -gv.JUMPER_JUMP_FORCE
@@ -54,6 +59,17 @@ class Enemy:
             self.phase = 1 if health_ratio > 0.66 else (2 if health_ratio > 0.33 else 3)
         return projectile
 
+    def _move_horizontally(self, platforms, distance):
+        self.rect.x += round(distance)
+        for platform in platforms:
+            if self.rect.colliderect(platform.rect) and self.rect.bottom > platform.rect.top + 2:
+                if distance > 0:
+                    self.rect.right = platform.rect.left
+                else:
+                    self.rect.left = platform.rect.right
+                self.direction *= -1
+                return
+
     def _past_platform_edge(self, platforms):
         feet = self.rect.move(self.direction * 4, 2)
         return not any(platform.active and platform.rect.colliderect(feet) for platform in platforms)
@@ -66,12 +82,15 @@ class Enemy:
         rect = self.rect.move(-round(camera_x), -round(camera_y))
         pygame.draw.rect(surface, self.colors[self.kind], rect, border_radius=8)
         pygame.draw.rect(surface, (255, 232, 188), rect, 2, border_radius=8)
-        if self.kind == "boss":
-            bar = pygame.Rect(rect.x, rect.y - 12, rect.width, 7)
-            pygame.draw.rect(surface, (60, 30, 45), bar)
-            fill = bar.copy()
-            fill.width = round(bar.width * max(0, self.health) / gv.ENEMY_HEALTH["boss"])
-            pygame.draw.rect(surface, (245, 80, 105), fill)
+        font = pygame.font.Font(None, 18)
+        label = font.render(self.name, True, (255, 232, 188))
+        surface.blit(label, (rect.centerx - label.get_width() // 2, rect.top - 34))
+        bar = pygame.Rect(rect.x, rect.top - 14, rect.width, 7)
+        pygame.draw.rect(surface, (28, 24, 31), bar)
+        fill = bar.copy()
+        fill.width = round(bar.width * max(0, self.health) / self.max_health)
+        pygame.draw.rect(surface, (231, 83, 89) if not self.is_boss else gv.BOSS_COLOR, fill)
+        pygame.draw.rect(surface, (255, 232, 188), bar, 1)
 
     def take_damage(self, amount):
         self.health -= amount

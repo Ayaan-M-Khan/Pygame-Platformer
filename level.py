@@ -2,6 +2,7 @@
 import math
 import pygame
 import gamevalues as gv
+from weapon import WeaponChest
 
 # Create Platform Classes to manange different platforms and the level structure
 class Platform:
@@ -86,6 +87,10 @@ class Level:
             (1530, 330, "dash"),
             (2640, 250, "double_jump"),
             (3440, 390, "shield"),
+        ]
+        self.weapon_chests = [
+            WeaponChest(1180, 456, "ember_blade"),
+            WeaponChest(3420, 416, "storm_bow"),
         ]
         self.goal = pygame.Rect(4880, 500, 60, 180)
 
