@@ -36,6 +36,8 @@ class Player:
         self.extra_jumps = 0
         self.jumps_remaining = 0
         self.dash_cooldown = 0.0
+        self.shield_charges = 0
+        self.invulnerability_timer = 0.0
 
     #Define properties for the x and y coordinates of the player, allowing for easy access and modification of the player's position
     @property
@@ -58,6 +60,7 @@ class Player:
         """Advance movement and resolve collisions against platform rectangles."""
         dt = min(max(dt, 0.0), 0.05)
         self.dash_cooldown = max(0.0, self.dash_cooldown - dt)
+        self.invulnerability_timer = max(0.0, self.invulnerability_timer - dt)
         was_on_ground = self.on_ground
         self.on_ground = False
 

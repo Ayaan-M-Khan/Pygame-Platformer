@@ -1,11 +1,14 @@
-import gamevalues as gv
+#Import Statements
 import pygame
 
+#Import Files
+import gamevalues as gv
 from enemy import create_enemies
 from level import Level
 from player import Player
 from powerup import create_powerups
 
+#Create the Camera angle for the player using the camera class and player values
 class Camera:
 	def __init__(self):
 		self.x = 0.0
@@ -25,6 +28,7 @@ def spawn_projectile(player, direction):
 		"rect": pygame.Rect(player.rect.centerx, player.rect.centery - 4, 16, 8),
 		"velocity": direction * gv.PROJECTILE_SPEED,
 		"damage": gv.PROJECTILE_DAMAGE,
+		"owner": "player",
 	}
 
 
@@ -34,6 +38,7 @@ def draw_hud(surface, player, level, enemies):
 	surface.blit(font.render(text, True, (245, 239, 211)), (18, 16))
 
 
+#Main Game Loop
 def run(max_frames=None):
 	pygame.init()
 	screen = pygame.display.set_mode((gv.SCREEN_WIDTH, gv.SCREEN_HEIGHT))
@@ -47,6 +52,7 @@ def run(max_frames=None):
 	projectiles = []
 	camera = Camera()
 	shoot_cooldown = 0.0
+	player.invulnerability_timer = 0.0
 	message = "Reach the beacon"
 	running = True
 	frame_count = 0
@@ -70,20 +76,36 @@ def run(max_frames=None):
 
 		for enemy in enemies:
 			if enemy.alive:
-				enemy.update(dt, level.collision_rects(), player.rect)
-				if enemy.rect.colliderect(player.rect):
-					player.health -= gv.CONTACT_DAMAGE
+				enemy_projectile = enemy.update(dt, level.collision_rects(), player.rect)
+				if enemy_projectile is not None:
+					projectiles.append(enemy_projectile)
+				if enemy.rect.colliderect(player.rect) and player.invulnerability_timer <= 0:
+					if player.shield_charges:
+						player.shield_charges -= 1
+					else:
+						player.health -= gv.CONTACT_DAMAGE
+					player.invulnerability_timer = gv.PLAYER_INVULNERABILITY_TIME
+
+		for platform in level.platforms:
+			if platform.active and platform.kind == "hazard" and player.rect.colliderect(platform.rect) and player.invulnerability_timer <= 0:
+				player.health -= gv.HAZARD_DAMAGE
+				player.invulnerability_timer = gv.PLAYER_INVULNERABILITY_TIME
 
 		for projectile in projectiles[:]:
 			projectile["rect"].x += round(projectile["velocity"] * dt)
 			if not pygame.Rect(0, 0, level.width, level.height).colliderect(projectile["rect"]):
 				projectiles.remove(projectile)
 				continue
-			for enemy in enemies:
-				if enemy.alive and projectile["rect"].colliderect(enemy.rect):
-					enemy.take_damage(projectile["damage"])
-					projectiles.remove(projectile)
-					break
+			if projectile["owner"] == "player":
+				for enemy in enemies:
+					if enemy.alive and projectile["rect"].colliderect(enemy.rect):
+						enemy.take_damage(projectile["damage"])
+						projectiles.remove(projectile)
+						break
+			elif projectile["rect"].colliderect(player.rect) and player.invulnerability_timer <= 0:
+				player.health -= projectile["damage"]
+				player.invulnerability_timer = gv.PLAYER_INVULNERABILITY_TIME
+				projectiles.remove(projectile)
 
 		for powerup in powerups:
 			if not powerup.collected and player.rect.colliderect(powerup.rect):
@@ -94,6 +116,8 @@ def run(max_frames=None):
 					player.extra_jumps = 1
 				elif powerup.kind == "health":
 					player.health = min(gv.PLAYER_HEALTH, player.health + 40)
+				elif powerup.kind == "shield":
+					player.shield_charges += 2
 				message = f"Collected {powerup.kind.replace('_', ' ')}"
 
 		if player.y > level.height + 100 or player.health <= 0:

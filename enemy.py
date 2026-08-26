@@ -1,7 +1,10 @@
+#Import statements
 import pygame
 import gamevalues as gv
 
-
+#Create Enemy Class
+# The Enemy class represents an enemy character in the game. It has properties such as position, health, type (kind), and behavior (movement, jumping, shooting). The class includes methods for updating the enemy's state, drawing it on the screen, and handling damage taken.
+#
 class Enemy:
     colors = {"walker": (204, 93, 83), "jumper": (190, 111, 215), "shooter": (89, 164, 205), "heavy": (148, 104, 77), "boss": (224, 75, 112)}
 
@@ -22,16 +25,24 @@ class Enemy:
         return self.health > 0
 
     def update(self, dt, platforms, player_rect):
+        projectile = None
         if self.kind in ("walker", "heavy", "boss"):
             speed = gv.ENEMY_SPEED[self.kind]
             self.rect.x += round(speed * self.direction * dt)
-            if abs(self.rect.centerx - self.spawn_x) > gv.ENEMY_PATROL_DISTANCE[self.kind]:
+            if self._past_platform_edge(platforms) or abs(self.rect.centerx - self.spawn_x) > gv.ENEMY_PATROL_DISTANCE[self.kind]:
                 self.direction *= -1
         if self.kind == "jumper":
+            self.rect.x += round((1 if player_rect.centerx > self.rect.centerx else -1) * gv.ENEMY_SPEED["jumper"] * dt)
             self.jump_timer -= dt
             if self.jump_timer <= 0 and self.rect.bottom >= self._floor_top(platforms):
                 self.velocity_y = -gv.JUMPER_JUMP_FORCE
                 self.jump_timer = gv.JUMPER_INTERVAL
+        if self.kind in ("shooter", "boss"):
+            self.shoot_timer -= dt
+            if self.shoot_timer <= 0 and abs(player_rect.centerx - self.rect.centerx) < 850:
+                direction = 1 if player_rect.centerx >= self.rect.centerx else -1
+                projectile = {"rect": pygame.Rect(self.rect.centerx, self.rect.centery, 12, 8), "velocity": direction * gv.ENEMY_PROJECTILE_SPEED, "damage": gv.ENEMY_PROJECTILE_DAMAGE, "owner": "enemy"}
+                self.shoot_timer = gv.SHOOTER_INTERVAL / (1.5 if self.phase > 1 else 1)
         self.velocity_y = min(self.velocity_y + gv.ENEMY_GRAVITY * dt, gv.ENEMY_MAX_FALL_SPEED)
         self.rect.y += round(self.velocity_y * dt)
         for platform in platforms:
@@ -40,6 +51,11 @@ class Enemy:
                 self.velocity_y = 0
         if self.kind == "boss" and self.health < gv.ENEMY_HEALTH["boss"] / 2:
             self.phase = 2
+        return projectile
+
+    def _past_platform_edge(self, platforms):
+        feet = self.rect.move(self.direction * 4, 2)
+        return not any(platform.active and platform.rect.colliderect(feet) for platform in platforms)
 
     def _floor_top(self, platforms):
         floors = [platform.rect.top for platform in platforms if platform.active and platform.rect.colliderect(self.rect.inflate(20, 4))]

@@ -1,8 +1,9 @@
+# Import Statements
 import math
 import pygame
 import gamevalues as gv
 
-
+# Create Platform Classes to manange different platforms and the level structure
 class Platform:
     def __init__(self, x, y, width, height=None, kind="solid", section=""):
         self.rect = pygame.Rect(x, y, width, height or gv.PLATFORM_HEIGHT)
@@ -53,6 +54,11 @@ class BreakablePlatform(Platform):
                 self.active = False
 
 
+class HazardPlatform(Platform):
+    def __init__(self, x, y, width, section):
+        super().__init__(x, y, width, gv.PLATFORM_HEIGHT, "hazard", section)
+
+
 class Level:
     def __init__(self):
         self.width = gv.WORLD_WIDTH
@@ -84,13 +90,14 @@ class Level:
         add = lambda x, y, width, section, kind="solid": platforms.append(
             Platform(x, y, width, gv.PLATFORM_HEIGHT, kind, section)
         )
-        add(0, 680, 720, "starting area")
-        add(760, 680, 520, "first challenge")
-        add(1320, 680, 620, "power-up approach")
-        add(1980, 680, 550, "combat section")
-        add(2580, 680, 540, "hazard section")
-        add(3170, 680, 620, "advanced platforming")
-        add(3840, 680, 1140, "boss approach")
+        y = 580 + 50
+        add(0, y, 720, "starting area")
+        add(760, y, 520, "first challenge")
+        add(1320, y, 620, "power-up approach")
+        add(1980, y, 550, "combat section")
+        add(2580, y, 540, "hazard section")
+        add(3170, y, 620, "advanced platforming")
+        add(3840, y, 1140, "boss approach")
 
         for platform in (
             (180, 570, 180, "starting area"),
@@ -116,6 +123,8 @@ class Level:
         platforms.append(MovingPlatform(1840, 560, 130, gv.PLATFORM_HEIGHT, "y", 100, 1.4, "power-up approach"))
         platforms.append(BreakablePlatform(2780, 350, 130, "hazard section"))
         platforms.append(BreakablePlatform(3080, 300, 130, "hazard section"))
+        platforms.append(HazardPlatform(2710, 656, 150, "hazard section"))
+        platforms.append(HazardPlatform(3020, 656, 110, "hazard section"))
         platforms.append(Platform(4430, 680, 500, gv.PLATFORM_HEIGHT, "boss_floor", "boss arena"))
         return platforms
 
