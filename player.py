@@ -1,8 +1,10 @@
+#Imort statements 
 import gamevalues as gv
 import pygame
 
-
+#Create Player Class
 class Player:
+    #Define the constructor for the Player class with default values for health, speed, jump strength, and projectile attributes
     def __init__(
         self,
         x,
@@ -31,6 +33,7 @@ class Player:
         self.coyote_timer = 0.0
         self.jump_buffer_timer = 0.0
 
+    #Define properties for the x and y coordinates of the player, allowing for easy access and modification of the player's position
     @property
     def x(self):
         return float(self.rect.x)
