@@ -89,8 +89,8 @@ class Level:
             (3440, 390, "shield"),
         ]
         self.weapon_chests = [
-            WeaponChest(1180, 456, "ember_blade"),
-            WeaponChest(3420, 416, "storm_bow"),
+            WeaponChest(1180, 416, "ember_blade"),
+            WeaponChest(3420, 386, "storm_bow"),
         ]
         self.goal = pygame.Rect(4880, 500, 60, 180)
 
@@ -109,34 +109,34 @@ class Level:
         add(3840, y, 1140, "boss approach")
 
         for platform in (
-            (180, 570, 180, "starting area"),
-            (470, 500, 150, "starting area"),
-            (820, 570, 170, "first challenge"),
-            (1060, 490, 160, "first challenge"),
-            (1370, 560, 170, "power-up approach"),
-            (1440, 400, 180, "power-up approach"),
-            (1660, 500, 180, "power-up approach", "one_way"),
-            (2040, 560, 170, "combat section"),
-            (2260, 450, 180, "combat section"),
-            (2470, 360, 150, "combat section"),
-            (2670, 520, 170, "hazard section"),
-            (2900, 430, 170, "hazard section"),
-            (3190, 550, 160, "advanced platforming"),
-            (3430, 450, 180, "advanced platforming"),
-            (3690, 360, 170, "advanced platforming"),
-            (3970, 550, 180, "boss approach"),
-            (4250, 470, 170, "boss approach"),
+            (180, 540, 180, "starting area"),
+            (470, 460, 150, "starting area"),
+            (820, 540, 170, "first challenge"),
+            (1060, 450, 160, "first challenge"),
+            (1370, 530, 170, "power-up approach"),
+            (1440, 370, 180, "power-up approach"),
+            (1660, 470, 180, "power-up approach", "one_way"),
+            (2040, 530, 170, "combat section"),
+            (2260, 420, 180, "combat section"),
+            (2470, 330, 150, "combat section"),
+            (2670, 490, 170, "hazard section"),
+            (2900, 400, 170, "hazard section"),
+            (3190, 520, 160, "advanced platforming"),
+            (3430, 420, 180, "advanced platforming"),
+            (3690, 330, 170, "advanced platforming"),
+            (3970, 520, 180, "boss approach"),
+            (4250, 440, 170, "boss approach"),
         ):
             add(*platform)
 
-        platforms.append(MovingPlatform(1840, 560, 130, gv.PLATFORM_HEIGHT, "y", 100, 1.4, "power-up approach"))
-        platforms.append(BreakablePlatform(2780, 350, 130, "hazard section"))
-        platforms.append(BreakablePlatform(3080, 300, 130, "hazard section"))
+        platforms.append(MovingPlatform(1840, 530, 130, gv.PLATFORM_HEIGHT, "y", 100, 1.4, "power-up approach"))
+        platforms.append(BreakablePlatform(2780, 320, 130, "hazard section"))
+        platforms.append(BreakablePlatform(3080, 270, 130, "hazard section"))
         platforms.append(HazardPlatform(2710, 656, 150, "hazard section"))
         platforms.append(HazardPlatform(3020, 656, 110, "hazard section"))
         platforms.append(Platform(4430, 680, 500, gv.PLATFORM_HEIGHT, "boss_floor", "boss arena"))
-        platforms.append(Platform(4430, 500, gv.PLATFORM_HEIGHT, 180, "boss_floor", "boss arena"))
-        platforms.append(Platform(4930, 500, gv.PLATFORM_HEIGHT, 180, "boss_floor", "boss arena"))
+        platforms.append(Platform(4430, 430, gv.PLATFORM_HEIGHT, 250, "boss_floor", "boss arena"))
+        platforms.append(Platform(4930, 430, gv.PLATFORM_HEIGHT, 250, "boss_floor", "boss arena"))
         return platforms
 
     def update(self, dt):

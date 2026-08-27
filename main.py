@@ -7,7 +7,7 @@ from enemy import create_enemies
 from level import Level
 from player import Player
 from powerup import create_powerups
-from ui import ObjectiveManager, draw_bar, draw_hud
+from ui import ObjectiveManager, draw_hud, draw_inventory
 
 #Create the Camera angle for the player using the camera class and player values
 class Camera:
@@ -28,7 +28,7 @@ def spawn_projectile(player, direction, damage=gv.PROJECTILE_DAMAGE):
 	return {
 		"rect": pygame.Rect(player.rect.centerx, player.rect.centery - 4, 16, 8),
 		"velocity": direction * gv.PROJECTILE_SPEED,
-		"damage": gv.PROJECTILE_DAMAGE,
+		"damage": damage,
 		"owner": "player",
 	}
 
@@ -50,6 +50,7 @@ def run(max_frames=None):
 	shoot_cooldown = 0.0
 	player.invulnerability_timer = 0.0
 	message = "Reach the beacon"
+	inventory_open = False
 	running = True
 	frame_count = 0
 
@@ -59,12 +60,12 @@ def run(max_frames=None):
 			if event.type == pygame.QUIT:
 				running = False
 			elif event.type == pygame.KEYDOWN:
-				if event.key == pygame.K_1:
-					player.equip_weapon("Iron Sword")
+				if event.key == pygame.K_TAB:
+					inventory_open = not inventory_open
+				elif event.key == pygame.K_1:
+					player.equip_slot(0)
 				elif event.key == pygame.K_2:
-					if not player.equip_weapon("Pulse Caster") and not player.equip_weapon("Storm Bow"):
-						player.item_message = "No ranged weapon"
-						player.item_message_timer = 1.0
+					player.equip_slot(1)
 				elif event.key == pygame.K_z:
 					attack = player.attack(pygame.time.get_ticks())
 					if attack and attack["kind"] == "ranged":
@@ -171,6 +172,8 @@ def run(max_frames=None):
 			pygame.draw.rect(screen, (246, 215, 126), attack_rect, 3)
 		player.draw(screen, camera.x, camera.y)
 		draw_hud(screen, player, level, enemies, objective, pygame.time.get_ticks())
+		if inventory_open:
+			draw_inventory(screen, player)
 		font = pygame.font.Font(None, 30)
 		screen.blit(font.render(message, True, (245, 239, 211)), (18, gv.SCREEN_HEIGHT - 38))
 		pygame.display.flip()

@@ -76,3 +76,28 @@ def draw_hud(surface, player, level, enemies, objective, now):
     if player.item_message_timer > 0:
         acquired = font.render(f"ITEM ACQUIRED  {player.item_message}", True, gv.UI_ACCENT)
         surface.blit(acquired, (gv.SCREEN_WIDTH // 2 - acquired.get_width() // 2, gv.SCREEN_HEIGHT - 58))
+
+
+def draw_inventory(surface, player):
+    overlay = pygame.Surface((gv.SCREEN_WIDTH, gv.SCREEN_HEIGHT), pygame.SRCALPHA)
+    overlay.fill((5, 9, 18, 150))
+    surface.blit(overlay, (0, 0))
+    panel = pygame.Rect(
+        (gv.SCREEN_WIDTH - gv.INVENTORY_PANEL_WIDTH) // 2,
+        (gv.SCREEN_HEIGHT - gv.INVENTORY_PANEL_HEIGHT) // 2,
+        gv.INVENTORY_PANEL_WIDTH,
+        gv.INVENTORY_PANEL_HEIGHT,
+    )
+    pygame.draw.rect(surface, gv.UI_PANEL, panel, border_radius=8)
+    pygame.draw.rect(surface, gv.UI_ACCENT, panel, 2, border_radius=8)
+    title_font = pygame.font.Font(None, 32)
+    item_font = pygame.font.Font(None, 22)
+    surface.blit(title_font.render(gv.INVENTORY_TITLE, True, gv.UI_TEXT), (panel.x + 18, panel.y + 14))
+    for slot, weapon in enumerate(player.weapon_slots):
+        slot_rect = pygame.Rect(panel.x + 22 + slot * (gv.INVENTORY_SLOT_SIZE + 20), panel.y + 58, gv.INVENTORY_SLOT_SIZE, 125)
+        selected = slot == player.active_slot
+        pygame.draw.rect(surface, (53, 62, 79) if selected else (30, 38, 55), slot_rect, border_radius=5)
+        pygame.draw.rect(surface, gv.UI_ACCENT if selected else gv.UI_BORDER, slot_rect, 2, border_radius=5)
+        surface.blit(item_font.render(f"{slot + 1}", True, gv.UI_ACCENT), (slot_rect.x + 10, slot_rect.y + 8))
+        surface.blit(item_font.render(weapon.name, True, gv.UI_TEXT), (slot_rect.x + 10, slot_rect.y + 38))
+        surface.blit(item_font.render(weapon.kind.title(), True, gv.UI_MUTED), (slot_rect.x + 10, slot_rect.y + 68))

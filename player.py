@@ -40,8 +40,10 @@ class Player:
         self.shield_charges = 0
         self.invulnerability_timer = 0.0
         self.facing = 1
-        self.weapons = [create_weapon("sword"), create_weapon("ranged")]
-        self.current_weapon = self.weapons[0]
+        self.weapon_slots = [create_weapon("sword"), create_weapon("ranged")]
+        self.active_slot = 0
+        self.weapons = self.weapon_slots
+        self.current_weapon = self.weapon_slots[self.active_slot]
         self.attack_effect = None
         self.item_message = "Iron Sword"
         self.item_message_timer = 0.0
@@ -123,16 +125,31 @@ class Player:
             self.attack_effect = None
 
     def add_weapon(self, weapon):
-        self.weapons = [existing for existing in self.weapons if existing.name != weapon.name]
-        self.weapons.append(weapon)
+        for index, existing in enumerate(self.weapon_slots):
+            if existing.name == weapon.name:
+                self.weapon_slots[index] = weapon
+                return index
+        self.weapon_slots[self.active_slot] = weapon
+        self.weapons = self.weapon_slots
+        return self.active_slot
 
     def equip_weapon(self, name):
-        for weapon in self.weapons:
+        for index, weapon in enumerate(self.weapon_slots):
             if weapon.name == name:
+                self.active_slot = index
                 self.current_weapon = weapon
                 self.item_message = weapon.name
                 self.item_message_timer = 2.5
                 return True
+        return False
+
+    def equip_slot(self, slot):
+        if 0 <= slot < len(self.weapon_slots):
+            self.active_slot = slot
+            self.current_weapon = self.weapon_slots[slot]
+            self.item_message = self.current_weapon.name
+            self.item_message_timer = 2.5
+            return True
         return False
 
     def attack(self, now):
