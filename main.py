@@ -8,7 +8,7 @@ from enemy import create_enemies
 from level import Level
 from player import Player
 from powerup import create_powerups
-from ui import ObjectiveManager, draw_hud, draw_inventory
+from ui import ObjectiveManager, draw_hud, draw_inventory, draw_pause_menu
 
 #Create the Camera angle for the player using the camera class and player values
 class Camera:
@@ -34,6 +34,10 @@ def spawn_projectile(player, direction, damage=gv.PROJECTILE_DAMAGE):
 	}
 
 
+def projectile_hits_terrain(projectile, platforms):
+	return any(platform.active and projectile["rect"].colliderect(platform.rect) for platform in platforms)
+
+
 #Main Game Loop
 def run(max_frames=None):
 	pygame.init()
@@ -52,6 +56,7 @@ def run(max_frames=None):
 	player.invulnerability_timer = 0.0
 	message = "Reach the beacon"
 	inventory_open = False
+	paused = False
 	running = True
 	frame_count = 0
 
@@ -61,6 +66,9 @@ def run(max_frames=None):
 			if event.type == pygame.QUIT:
 				running = False
 			elif event.type == pygame.KEYDOWN:
+				if event.key in (pygame.K_p, pygame.K_ESCAPE):
+					paused = not paused
+					continue
 				if event.key == pygame.K_TAB:
 					inventory_open = not inventory_open
 				elif event.key == pygame.K_1:
@@ -80,8 +88,18 @@ def run(max_frames=None):
 								message = f"ITEM ACQUIRED  {weapon.name}"
 							break
 
+		if paused:
+			screen.fill(gv.BACKGROUND_COLOR)
+			level.draw(screen, camera.x, camera.y)
+			player.draw(screen, camera.x, camera.y)
+			draw_hud(screen, player, level, enemies, objective, pygame.time.get_ticks())
+			draw_pause_menu(screen, player)
+			pygame.display.flip()
+			frame_count += 1
+			continue
+
 		keys = pygame.key.get_pressed()
-		level.update(dt)
+		level.update(dt, camera.x)
 		player.update(keys, level.collision_rects(), dt)
 		player.rect.left = max(0, player.rect.left)
 		player.rect.right = min(level.width, player.rect.right)
@@ -112,7 +130,7 @@ def run(max_frames=None):
 
 		for projectile in projectiles[:]:
 			projectile["rect"].x += round(projectile["velocity"] * dt)
-			if not pygame.Rect(0, 0, level.width, level.height).colliderect(projectile["rect"]):
+			if projectile_hits_terrain(projectile, level.collision_rects()) or not pygame.Rect(0, 0, level.width, level.height).colliderect(projectile["rect"]):
 				projectiles.remove(projectile)
 				continue
 			if projectile["owner"] == "player":
@@ -131,12 +149,15 @@ def run(max_frames=None):
 				powerup.collected = True
 				if powerup.kind == "dash":
 					player.has_dash = True
+					player.active_powerups["Dash"] = gv.POWERUP_DURATION
 				elif powerup.kind == "double_jump":
 					player.extra_jumps = 1
+					player.active_powerups["Double Jump"] = gv.POWERUP_DURATION
 				elif powerup.kind == "health":
 					player.health = min(gv.PLAYER_HEALTH, player.health + 40)
 				elif powerup.kind == "shield":
 					player.shield_charges += 2
+					player.active_powerups["Shield"] = gv.POWERUP_DURATION
 				message = f"Collected {powerup.kind.replace('_', ' ')}"
 		objective.update(dt)
 		for chest in level.weapon_chests:

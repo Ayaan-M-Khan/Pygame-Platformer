@@ -4,14 +4,18 @@ import gamevalues as gv
 
 
 class Weapon:
-    def __init__(self, name, damage, cooldown, range, knockback, kind="melee"):
+    def __init__(self, name, damage, cooldown, range, knockback, kind="melee", description=""):
         self.name = name
         self.damage = damage
         self.cooldown = cooldown
         self.range = range
         self.knockback = knockback
         self.kind = kind
+        self.description = description or f"A reliable {kind} weapon."
         self.last_attack = -cooldown
+
+    def describe(self):
+        return f"{self.kind.title()}  |  {self.damage} damage  |  {self.cooldown / 1000:.1f}s cooldown"
 
     def ready(self, now):
         return now - self.last_attack >= self.cooldown
@@ -52,9 +56,9 @@ class WeaponChest:
 
 def create_weapon(weapon_id):
     if weapon_id == "ember_blade":
-        return Weapon("Ember Blade", gv.EMBER_BLADE_DAMAGE, gv.SWORD_COOLDOWN, gv.SWORD_RANGE, gv.SWORD_KNOCKBACK)
+        return Weapon("Ember Blade", gv.EMBER_BLADE_DAMAGE, gv.SWORD_COOLDOWN, gv.SWORD_RANGE, gv.SWORD_KNOCKBACK, description="A heated blade that hits harder than iron.")
     if weapon_id == "storm_bow":
-        return Weapon("Storm Bow", gv.STORM_BOW_DAMAGE, gv.STORM_BOW_COOLDOWN, gv.STORM_BOW_RANGE, gv.STORM_BOW_KNOCKBACK, "ranged")
+        return Weapon("Storm Bow", gv.STORM_BOW_DAMAGE, gv.STORM_BOW_COOLDOWN, gv.STORM_BOW_RANGE, gv.STORM_BOW_KNOCKBACK, "ranged", "A long-range bow charged with storm energy.")
     if weapon_id == "ranged":
-        return Weapon("Pulse Caster", gv.PROJECTILE_DAMAGE, gv.PROJECTILE_COOLDOWN * 1000, gv.PROJECTILE_RANGE, gv.PROJECTILE_KNOCKBACK, "ranged")
-    return Weapon("Iron Sword", gv.SWORD_DAMAGE, gv.SWORD_COOLDOWN, gv.SWORD_RANGE, gv.SWORD_KNOCKBACK)
+        return Weapon("Pulse Caster", gv.PROJECTILE_DAMAGE, gv.PROJECTILE_COOLDOWN * 1000, gv.PROJECTILE_RANGE, gv.PROJECTILE_KNOCKBACK, "ranged", "A compact ranged sidearm for reliable shots.")
+    return Weapon("Iron Sword", gv.SWORD_DAMAGE, gv.SWORD_COOLDOWN, gv.SWORD_RANGE, gv.SWORD_KNOCKBACK, description="The starting blade: quick, close, and dependable.")

@@ -139,9 +139,10 @@ class Level:
         platforms.append(Platform(4930, 430, gv.PLATFORM_HEIGHT, 250, "boss_floor", "boss arena"))
         return platforms
 
-    def update(self, dt):
+    def update(self, dt, camera_x=0):
         for platform in self.platforms:
-            platform.update(dt)
+            if abs(platform.rect.centerx - camera_x - gv.SCREEN_WIDTH / 2) < gv.SCREEN_WIDTH * 1.5:
+                platform.update(dt)
 
     def collision_rects(self):
         return [platform for platform in self.platforms if platform.active]
@@ -154,6 +155,7 @@ class Level:
 
     def draw(self, surface, camera_x, camera_y):
         for platform in self.platforms:
-            platform.draw(surface, camera_x, camera_y)
+            if -gv.SCREEN_WIDTH <= platform.rect.right - camera_x and platform.rect.left - camera_x <= gv.SCREEN_WIDTH * 2:
+                platform.draw(surface, camera_x, camera_y)
         goal = self.goal.move(-round(camera_x), -round(camera_y))
         pygame.draw.rect(surface, gv.GOAL_COLOR, goal, 4)

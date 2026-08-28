@@ -39,6 +39,10 @@ def draw_hud(surface, player, level, enemies, objective, now):
     surface.blit(font.render(player.current_weapon.name, True, gv.UI_TEXT), (16, 88))
     if player.shield_charges:
         surface.blit(small.render(f"Shield charges: {player.shield_charges}", True, gv.UI_ACCENT), (16, 116))
+    timer_y = 140
+    for name, remaining in player.active_powerups.items():
+        surface.blit(small.render(f"{name}: {remaining:.1f}s", True, gv.UI_ACCENT), (16, timer_y))
+        timer_y += 20
 
     panel = pygame.Rect(gv.SCREEN_WIDTH - 250, 16, 234, 76)
     pygame.draw.rect(surface, gv.UI_PANEL, panel, border_radius=5)
@@ -100,4 +104,27 @@ def draw_inventory(surface, player):
         pygame.draw.rect(surface, gv.UI_ACCENT if selected else gv.UI_BORDER, slot_rect, 2, border_radius=5)
         surface.blit(item_font.render(f"{slot + 1}", True, gv.UI_ACCENT), (slot_rect.x + 10, slot_rect.y + 8))
         surface.blit(item_font.render(weapon.name, True, gv.UI_TEXT), (slot_rect.x + 10, slot_rect.y + 38))
-        surface.blit(item_font.render(weapon.kind.title(), True, gv.UI_MUTED), (slot_rect.x + 10, slot_rect.y + 68))
+        surface.blit(item_font.render(weapon.describe(), True, gv.UI_MUTED), (slot_rect.x + 10, slot_rect.y + 68))
+        if slot_rect.collidepoint(pygame.mouse.get_pos()):
+            tooltip = pygame.Rect(slot_rect.right + 10, slot_rect.y, 210, 74)
+            pygame.draw.rect(surface, gv.UI_PANEL, tooltip, border_radius=5)
+            pygame.draw.rect(surface, gv.UI_BORDER, tooltip, 1, border_radius=5)
+            surface.blit(item_font.render(weapon.description, True, gv.UI_TEXT), (tooltip.x + 8, tooltip.y + 10))
+            surface.blit(item_font.render(weapon.describe(), True, gv.UI_MUTED), (tooltip.x + 8, tooltip.y + 38))
+
+
+def draw_pause_menu(surface, player):
+    overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+    overlay.fill((5, 9, 18, 190))
+    surface.blit(overlay, (0, 0))
+    width, height = surface.get_size()
+    panel = pygame.Rect(width * 0.25, height * 0.2, width * 0.5, height * 0.6)
+    pygame.draw.rect(surface, gv.UI_PANEL, panel, border_radius=8)
+    pygame.draw.rect(surface, gv.UI_ACCENT, panel, 2, border_radius=8)
+    title = pygame.font.Font(None, 42).render("PAUSED", True, gv.UI_TEXT)
+    surface.blit(title, (panel.centerx - title.get_width() // 2, panel.y + 25))
+    text = pygame.font.Font(None, 25)
+    lines = ["Press P or Escape to resume", "Tab: loadout", f"Equipped: {player.current_weapon.name}"]
+    for index, line in enumerate(lines):
+        rendered = text.render(line, True, gv.UI_MUTED)
+        surface.blit(rendered, (panel.centerx - rendered.get_width() // 2, panel.y + 105 + index * 34))

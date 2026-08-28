@@ -47,6 +47,7 @@ class Player:
         self.attack_effect = None
         self.item_message = "Iron Sword"
         self.item_message_timer = 0.0
+        self.active_powerups = {}
 
     #Define properties for the x and y coordinates of the player, allowing for easy access and modification of the player's position
     @property
@@ -71,6 +72,10 @@ class Player:
         self.dash_cooldown = max(0.0, self.dash_cooldown - dt)
         self.invulnerability_timer = max(0.0, self.invulnerability_timer - dt)
         self.item_message_timer = max(0.0, self.item_message_timer - dt)
+        for name in list(self.active_powerups):
+            self.active_powerups[name] -= dt
+            if self.active_powerups[name] <= 0:
+                del self.active_powerups[name]
         was_on_ground = self.on_ground
         self.on_ground = False
 
@@ -196,6 +201,14 @@ class Player:
         draw_rect = self.rect.move(-round(camera_x), -round(camera_y))
         pygame.draw.rect(surface, gv.PLAYER_COLOR, draw_rect, border_radius=8)
         pygame.draw.rect(surface, gv.PLAYER_OUTLINE_COLOR, draw_rect, width=2, border_radius=8)
+        hand = draw_rect.midright if self.facing > 0 else draw_rect.midleft
+        if self.current_weapon.kind == "melee":
+            tip = (hand[0] + self.facing * 28, hand[1] - 10)
+            pygame.draw.line(surface, (228, 232, 220), hand, tip, 5)
+            pygame.draw.line(surface, (245, 175, 80), (hand[0] - self.facing * 5, hand[1] + 7), (hand[0] + self.facing * 5, hand[1] - 7), 4)
+        else:
+            tip = (hand[0] + self.facing * 24, hand[1])
+            pygame.draw.line(surface, (82, 191, 208), hand, tip, 4)
 
     def move(self, keys):
         """Compatibility wrapper for callers that still use the original API."""

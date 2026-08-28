@@ -23,6 +23,10 @@ class Enemy:
         self.shoot_timer = gv.SHOOTER_INTERVAL
         self.phase = 1
         self.hit_by_attack = False
+        self.state = "patrol"
+        self.detection_range = 520 if kind != "boss" else 900
+        self.attack_windup = 0.0
+        self.stun_timer = 0.0
 
     @property
     def alive(self):
@@ -30,8 +34,15 @@ class Enemy:
 
     def update(self, dt, platforms, player_rect):
         projectile = None
+        self.stun_timer = max(0.0, self.stun_timer - dt)
+        if self.stun_timer > 0:
+            self.state = "stunned"
+            return None
+        self.state = "chase" if abs(player_rect.centerx - self.rect.centerx) <= self.detection_range else "patrol"
         if self.kind in ("walker", "heavy", "boss"):
             speed = gv.ENEMY_SPEED[self.kind]
+            if self.state == "chase":
+                self.direction = 1 if player_rect.centerx > self.rect.centerx else -1
             self._move_horizontally(platforms, speed * self.direction * dt)
             if self._past_platform_edge(platforms) or abs(self.rect.centerx - self.spawn_x) > gv.ENEMY_PATROL_DISTANCE[self.kind]:
                 self.direction *= -1
@@ -43,11 +54,18 @@ class Enemy:
                 self.velocity_y = -gv.JUMPER_JUMP_FORCE
                 self.jump_timer = gv.JUMPER_INTERVAL
         if self.kind in ("shooter", "boss"):
+            if self.attack_windup > 0:
+                self.attack_windup -= dt
+                self.state = "telegraph"
+                if self.attack_windup <= 0:
+                    direction = 1 if player_rect.centerx >= self.rect.centerx else -1
+                    projectile = {"rect": pygame.Rect(self.rect.centerx, self.rect.centery, 12, 8), "velocity": direction * gv.ENEMY_PROJECTILE_SPEED, "damage": gv.ENEMY_PROJECTILE_DAMAGE, "owner": "enemy"}
+                    self.shoot_timer = gv.SHOOTER_INTERVAL / (1.5 if self.phase == 2 else (2 if self.phase == 3 else 1))
+                return projectile
             self.shoot_timer -= dt
             if self.shoot_timer <= 0 and abs(player_rect.centerx - self.rect.centerx) < 850:
-                direction = 1 if player_rect.centerx >= self.rect.centerx else -1
-                projectile = {"rect": pygame.Rect(self.rect.centerx, self.rect.centery, 12, 8), "velocity": direction * gv.ENEMY_PROJECTILE_SPEED, "damage": gv.ENEMY_PROJECTILE_DAMAGE, "owner": "enemy"}
-                self.shoot_timer = gv.SHOOTER_INTERVAL / (1.5 if self.phase == 2 else (2 if self.phase == 3 else 1))
+                self.attack_windup = gv.BOSS_ATTACK_WINDUP if self.is_boss else gv.SHOOTER_ATTACK_WINDUP
+                self.state = "telegraph"
         self.velocity_y = min(self.velocity_y + gv.ENEMY_GRAVITY * dt, gv.ENEMY_MAX_FALL_SPEED)
         self.rect.y += round(self.velocity_y * dt)
         for platform in platforms:
@@ -81,6 +99,8 @@ class Enemy:
     def draw(self, surface, camera_x, camera_y):
         rect = self.rect.move(-round(camera_x), -round(camera_y))
         pygame.draw.rect(surface, self.colors[self.kind], rect, border_radius=8)
+        if self.state == "telegraph":
+            pygame.draw.rect(surface, (255, 229, 139), rect.inflate(10, 10), 3, border_radius=10)
         pygame.draw.rect(surface, (255, 232, 188), rect, 2, border_radius=8)
         font = pygame.font.Font(None, 18)
         label = font.render(self.name, True, (255, 232, 188))
