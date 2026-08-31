@@ -94,9 +94,9 @@ class Bullet:
         return pygame.Rect(round(self.position.x - self.radius), round(self.position.y - self.radius), self.radius * 2, self.radius * 2)
 
     def update(self, dt, platforms, world_width):
-        distance = self.velocity.x * dt
-        self.position.x += distance
-        self.travelled += abs(distance)
+        displacement = self.velocity * dt
+        self.position += displacement
+        self.travelled += displacement.length()
         if self.travelled >= self.range or self.position.x < 0 or self.position.x > world_width:
             self.alive = False
         if any(platform.active and self.rect.colliderect(platform.rect) for platform in platforms):
