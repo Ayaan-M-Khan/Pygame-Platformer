@@ -1,7 +1,8 @@
 #Imort statements 
+import math
 import gamevalues as gv
 import pygame
-from weapon import Weapon, create_weapon
+from weapon import Gun, Sword, create_weapon
 
 #Create Player Class
 class Player:
@@ -40,6 +41,7 @@ class Player:
         self.shield_charges = 0
         self.invulnerability_timer = 0.0
         self.facing = 1
+        self.aim_angle = 0.0
         self.weapon_slots = [create_weapon("sword"), create_weapon("ranged")]
         self.active_slot = 0
         self.weapons = self.weapon_slots
@@ -158,10 +160,18 @@ class Player:
         return False
 
     def attack(self, now):
-        attack = self.current_weapon.attack(self, now)
-        if attack and attack["kind"] == "melee":
+        if isinstance(self.current_weapon, Sword):
+            attack = self.current_weapon.swing(self, now)
             self.attack_effect = attack
-        return attack
+            return attack
+        if isinstance(self.current_weapon, Gun):
+            return self.current_weapon.fire(self, now)
+        return None
+
+    def update_aim(self, mouse_position, camera_x=0, camera_y=0):
+        self.current_weapon.update_aim(self.rect, mouse_position, camera_x, camera_y)
+        self.aim_angle = self.current_weapon.angle
+        self.facing = 1 if math.cos(self.aim_angle) >= 0 else -1
 
     def _move_horizontally(self, platforms, distance):
         previous_bottom = self.rect.bottom
@@ -202,13 +212,10 @@ class Player:
         pygame.draw.rect(surface, gv.PLAYER_COLOR, draw_rect, border_radius=8)
         pygame.draw.rect(surface, gv.PLAYER_OUTLINE_COLOR, draw_rect, width=2, border_radius=8)
         hand = draw_rect.midright if self.facing > 0 else draw_rect.midleft
-        if self.current_weapon.kind == "melee":
-            tip = (hand[0] + self.facing * 28, hand[1] - 10)
-            pygame.draw.line(surface, (228, 232, 220), hand, tip, 5)
-            pygame.draw.line(surface, (245, 175, 80), (hand[0] - self.facing * 5, hand[1] + 7), (hand[0] + self.facing * 5, hand[1] - 7), 4)
-        else:
-            tip = (hand[0] + self.facing * 24, hand[1])
-            pygame.draw.line(surface, (82, 191, 208), hand, tip, 4)
+        if isinstance(self.current_weapon, Sword):
+            self.current_weapon.draw(surface, self.rect, camera_x, camera_y)
+        elif isinstance(self.current_weapon, Gun):
+            self.current_weapon.draw(surface, self.rect, camera_x, camera_y, pygame.time.get_ticks(), self.facing)
 
     def move(self, keys):
         """Compatibility wrapper for callers that still use the original API."""

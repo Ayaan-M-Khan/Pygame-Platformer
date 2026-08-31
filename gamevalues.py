@@ -50,6 +50,7 @@ JUMPER_JUMP_FORCE = 520.0
 SHOOTER_INTERVAL = 2.0
 ENEMY_PROJECTILE_SPEED = 300.0
 ENEMY_PROJECTILE_DAMAGE = 12
+ENEMY_HIT_STUN = 0.18
 SHOOTER_ATTACK_WINDUP = 0.25
 BOSS_ATTACK_WINDUP = 0.65
 ENEMY_NAME = {"walker": "Ash Walker", "jumper": "Gale Hopper", "shooter": "Cinder Sentry", "heavy": "Stone Brute", "boss": "THE RED WARDEN"}

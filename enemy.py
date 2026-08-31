@@ -1,6 +1,7 @@
 #Import statements
 import pygame
 import gamevalues as gv
+from weapon import Bullet
 
 #Create Enemy Class
 # The Enemy class represents an enemy character in the game. It has properties such as position, health, type (kind), and behavior (movement, jumping, shooting). The class includes methods for updating the enemy's state, drawing it on the screen, and handling damage taken.
@@ -23,10 +24,10 @@ class Enemy:
         self.shoot_timer = gv.SHOOTER_INTERVAL
         self.phase = 1
         self.hit_by_attack = False
+        self.stun_timer = 0.0
         self.state = "patrol"
         self.detection_range = 520 if kind != "boss" else 900
         self.attack_windup = 0.0
-        self.stun_timer = 0.0
 
     @property
     def alive(self):
@@ -59,7 +60,8 @@ class Enemy:
                 self.state = "telegraph"
                 if self.attack_windup <= 0:
                     direction = 1 if player_rect.centerx >= self.rect.centerx else -1
-                    projectile = {"rect": pygame.Rect(self.rect.centerx, self.rect.centery, 12, 8), "velocity": direction * gv.ENEMY_PROJECTILE_SPEED, "damage": gv.ENEMY_PROJECTILE_DAMAGE, "owner": "enemy"}
+                    projectile = Bullet(self.rect.centerx, self.rect.centery, direction, gv.ENEMY_PROJECTILE_SPEED, gv.ENEMY_PROJECTILE_DAMAGE, gv.WORLD_WIDTH, (255, 160, 40), 5)
+                    projectile.owner = "enemy"
                     self.shoot_timer = gv.SHOOTER_INTERVAL / (1.5 if self.phase == 2 else (2 if self.phase == 3 else 1))
                 return projectile
             self.shoot_timer -= dt
@@ -114,6 +116,7 @@ class Enemy:
 
     def take_damage(self, amount):
         self.health -= amount
+        self.stun_timer = gv.ENEMY_HIT_STUN
 
 
 def create_enemies(spawns):

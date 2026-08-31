@@ -89,8 +89,8 @@ class Level:
             (3440, 390, "shield"),
         ]
         self.weapon_chests = [
-            WeaponChest(1180, 416, "ember_blade"),
-            WeaponChest(3420, 386, "storm_bow"),
+            WeaponChest(1180, 416, None),
+            WeaponChest(3420, 386, None),
         ]
         self.goal = pygame.Rect(4880, 500, 60, 180)
 
